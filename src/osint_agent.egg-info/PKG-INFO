@@ -1,0 +1,89 @@
+Metadata-Version: 2.4
+Name: osint-agent
+Version: 0.1.0
+Summary: Standalone OSINT research agent for web, archive, PDF evidence, recursive crawling, and memory
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+Requires-Dist: ddgs>=9.0.0
+Requires-Dist: requests>=2.32.3
+Requires-Dist: beautifulsoup4>=4.12.3
+Requires-Dist: pypdf>=5.0.1
+Requires-Dist: typer>=0.12.5
+Requires-Dist: rich>=13.8.1
+Requires-Dist: torch>=2.0.0
+
+# OSINT Agent
+
+A standalone local research app for accuracy-first open-source intelligence workflows.
+
+## What it does
+
+- Searches the web for relevant material
+- Searches the Internet Archive for archived pages and texts
+- Follows links from web results and identifies linked PDFs
+- Visualizes crawl paths and discovery depth
+- Extracts text from local PDF files or PDF URLs
+- Ranks sources by evidence strength and relevance
+- Produces a report with sources, excerpts, and a confidence-aware summary
+- Exports JSON and CSV evidence bundles
+ - Learns from saved feedback with a small backprop-trained neural ranker
+
+## Install
+
+```bash
+pip install -e .
+```
+
+## Run
+
+```bash
+osint-agent investigate "target subject" --pdf ./evidence.pdf --archive-limit 10 --web-limit 10 --json-output ./run.json --csv-output ./run.csv
+```
+
+By default it uses an allowlist derived from the initial seed domains while crawling. Pass `--open-crawl` if you want it to expand more freely.
+
+You can also pass multiple PDFs:
+
+```bash
+osint-agent investigate "target subject" --pdf one.pdf --pdf two.pdf
+```
+
+## Notes
+
+This app is designed to gather evidence and organize findings. It does not invent facts, and it surfaces uncertainty instead of hiding it.
+
+Train the learning model from saved feedback:
+
+```bash
+osint-agent learn train
+```
+
+Run a PHANTOM_LEGION coordinator (optionally persistent):
+
+```bash
+osint-agent phantom-coordinator --host 0.0.0.0 --port 8780 --token phantom --db-path .coordinator.db
+```
+
+Start a PHANTOM_LEGION worker agent that joins the queue and polls for jobs:
+
+```bash
+osint-agent phantom-worker --coordinator-url http://127.0.0.1:8780 --token phantom
+```
+
+Dispatch queued work to a coordinator with a pool of workers:
+
+```bash
+osint-agent legion "target subject" --coordinator-url http://127.0.0.1:8780 --token phantom
+```
+
+The coordinator persists all jobs and worker heartbeats to SQLite, so work survives coordinator restarts. Workers automatically re-join after failure, and claimed jobs are recovered after 10 minutes of inactivity.
+
+Installation notes for PyTorch (required for training/inference):
+
+On most systems the easiest way is to install the CPU wheels from PyTorch's official index. Example (CPU-only):
+
+```bash
+pip install torch --index-url https://download.pytorch.org/whl/cpu
+```
+
+For GPUs or other configurations, visit https://pytorch.org/get-started/locally/ and follow the recommended command for your platform and CUDA version.

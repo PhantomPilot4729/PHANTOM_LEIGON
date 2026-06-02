@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "osint-agent"
+version = "0.1.0"
+description = "Standalone OSINT research agent for web, archive, PDF evidence, recursive crawling, and memory"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "ddgs>=9.0.0",
+  "requests>=2.32.3",
+  "beautifulsoup4>=4.12.3",
+  "pypdf>=5.0.1",
+  "typer>=0.12.5",
+  "rich>=13.8.1",
+  "torch>=2.0.0",
+]
+
+[project.scripts]
+osint-agent = "osint_agent.cli:app"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
