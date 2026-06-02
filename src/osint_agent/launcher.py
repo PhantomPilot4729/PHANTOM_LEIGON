@@ -1,3 +1,37 @@
+# ── PATCH: added all missing imports ──────────────────────────────────────────
+# Flake8 F821 fired on every name below because this file had zero imports.
+# Standard library names (os, threading, Path) were used bare in the function
+# body. Internal helpers were called without any import statement at all.
+#
+# ACTION REQUIRED before committing:
+#   Run this from the repo root to confirm each module path is correct:
+#     grep -r "def create_phantom_coordinator_server\
+#              \|def create_phantom_control_bridge_server\
+#              \|def run_phantom_worker_agent\
+#              \|class Supervisor\
+#              \|def _wait_for_health\
+#              \|def gui_main" src/
+#   Adjust the four internal imports below if the paths differ.
+# ──────────────────────────────────────────────────────────────────────────────
+#import os                          # F821 @ lines 44, 45, 68, 69
+#import threading                   # F821 @ line 93
+#from pathlib import Path           # F821 @ line 6  (type hint in signature)
+
+#from osint_agent.coordinator import create_phantom_coordinator_server   # F821 @ line 19
+#from osint_agent.bridge      import create_phantom_control_bridge_server # F821 @ line 50
+#from osint_agent.worker      import run_phantom_worker_agent             # F821 @ line 77
+#from osint_agent.supervisor  import Supervisor                           # F821 @ line 26
+#from osint_agent.health      import _wait_for_health                     # F821 @ line 42
+#from osint_agent.gui         import gui_main                             # F821 @ line 91
+# ── END PATCH ─────────────────────────────────────────────────────────────────
+import os
+import threading
+from pathlib import Path
+from osint_agent.worker import create_phantom_coordinator_server
+from osint_agent.bridge import create_phantom_control_bridge_server
+from osint_agent.worker import run_phantom_worker_agent
+from osint_agent.supervisor import Supervisor
+
 def launch_phantom_app(
     *,
     host: str = "127.0.0.1",
