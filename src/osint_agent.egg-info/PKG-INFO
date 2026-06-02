@@ -8,6 +8,7 @@ Requires-Dist: ddgs>=9.0.0
 Requires-Dist: requests>=2.32.3
 Requires-Dist: beautifulsoup4>=4.12.3
 Requires-Dist: pypdf>=5.0.1
+Requires-Dist: numpy>=1.26.0
 Requires-Dist: typer>=0.12.5
 Requires-Dist: rich>=13.8.1
 Requires-Dist: torch>=2.0.0
@@ -74,6 +75,17 @@ Dispatch queued work to a coordinator with a pool of workers:
 
 ```bash
 osint-agent legion "target subject" --coordinator-url http://127.0.0.1:8780 --token phantom
+```
+
+Merged reports are saved in the project-level `reports/` folder, for example `reports/phantom_target_subject.md`.
+PHANTOM_LEGION also writes a Maltego-ready CSV export into `reports/maltego/`, which you can import into Maltego as a Website entity list.
+Investigations automatically query the Wayback Machine for snapshots of discovered web URLs, which helps recover content that has been deleted from the live web.
+Trail tracking is enabled by default: the crawler prioritizes pointer links and can follow multi-hop chains toward target evidence (`--track-target/--no-track-target`).
+
+One-click startup is available through the `app` command or the desktop shortcut:
+
+```bash
+osint-agent app --host 127.0.0.1 --port 8780 --token phantom --db-path .phantom_coordinator.sqlite3 --worker-count 1
 ```
 
 The coordinator persists all jobs and worker heartbeats to SQLite, so work survives coordinator restarts. Workers automatically re-join after failure, and claimed jobs are recovered after 10 minutes of inactivity.

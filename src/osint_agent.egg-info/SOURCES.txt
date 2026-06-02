@@ -7,6 +7,7 @@ src/osint_agent/crawler.py
 src/osint_agent/engine.py
 src/osint_agent/exporting.py
 src/osint_agent/gui.py
+src/osint_agent/launcher.py
 src/osint_agent/learning.py
 src/osint_agent/legion.py
 src/osint_agent/links.py
@@ -23,8 +24,12 @@ src/osint_agent.egg-info/dependency_links.txt
 src/osint_agent.egg-info/entry_points.txt
 src/osint_agent.egg-info/requires.txt
 src/osint_agent.egg-info/top_level.txt
+tests/test_archive_wayback.py
+tests/test_cli_reports.py
 tests/test_coordinator_worker.py
+tests/test_launcher.py
 tests/test_legion.py
 tests/test_system_integration.py
+tests/test_target_tracking.py
 tests/test_trainer.py
 tests/test_worker_dispatch.py
