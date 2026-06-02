@@ -2,6 +2,7 @@ README.md
 pyproject.toml
 src/osint_agent/__init__.py
 src/osint_agent/archive.py
+src/osint_agent/bridge.py
 src/osint_agent/cli.py
 src/osint_agent/crawler.py
 src/osint_agent/engine.py
@@ -15,7 +16,9 @@ src/osint_agent/memory.py
 src/osint_agent/pdfs.py
 src/osint_agent/ranking.py
 src/osint_agent/report.py
+src/osint_agent/schema.py
 src/osint_agent/search.py
+src/osint_agent/supervisor.py
 src/osint_agent/visualize.py
 src/osint_agent/worker.py
 src/osint_agent.egg-info/PKG-INFO
@@ -25,6 +28,7 @@ src/osint_agent.egg-info/entry_points.txt
 src/osint_agent.egg-info/requires.txt
 src/osint_agent.egg-info/top_level.txt
 tests/test_archive_wayback.py
+tests/test_bridge.py
 tests/test_cli_reports.py
 tests/test_coordinator_worker.py
 tests/test_launcher.py

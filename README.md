@@ -67,11 +67,31 @@ PHANTOM_LEGION also writes a Maltego-ready CSV export into `reports/maltego/`, w
 Investigations automatically query the Wayback Machine for snapshots of discovered web URLs, which helps recover content that has been deleted from the live web.
 Trail tracking is enabled by default: the crawler prioritizes pointer links and can follow multi-hop chains toward target evidence (`--track-target/--no-track-target`).
 
-One-click startup is available through the `app` command or the desktop shortcut:
+One-click startup is available through the `app` command or the desktop shortcut. It starts the coordinator, local worker(s), the GUI, and the control bridge:
 
 ```bash
-osint-agent app --host 127.0.0.1 --port 8780 --token phantom --db-path .phantom_coordinator.sqlite3 --worker-count 1
+osint-agent app --host 127.0.0.1 --port 8780 --token phantom --db-path .phantom_coordinator.sqlite3 --worker-count 1 --bridge-host 0.0.0.0 --bridge-port 8790
 ```
+
+If you want an ESP32 or Arduino R4 Wi-Fi board to trigger work over the network, start the control bridge on the main computer:
+
+```bash
+osint-agent bridge --host 0.0.0.0 --port 8790 --token phantom
+```
+
+Then send authenticated JSON requests to `POST /command` with the `X-Phantom-Token` header. Example payloads:
+
+```json
+{ "command": "investigate", "subject": "example target" }
+```
+
+```json
+{ "command": "legion", "subjects": ["alpha", "beta"], "mode": "parallel", "num_agents": 2 }
+```
+
+The bridge queues commands in the background and exposes `GET /job/<id>` so a microcontroller can poll for completion without holding a long HTTP request open.
+
+A ready-to-edit board client sketch lives at [tools/bridge_client/bridge_client.ino](tools/bridge_client/bridge_client.ino).
 
 The coordinator persists all jobs and worker heartbeats to SQLite, so work survives coordinator restarts. Workers automatically re-join after failure, and claimed jobs are recovered after 10 minutes of inactivity.
 

@@ -447,6 +447,7 @@ def run_phantom_worker_agent(
                 web_limit=int(payload.get("web_limit", 10)),
                 archive_limit=int(payload.get("archive_limit", 10)),
                 follow_links=bool(payload.get("follow_links", True)),
+                track_trails=bool(payload.get("track_target", payload.get("track_trails", True))),
                 crawl_depth=int(payload.get("crawl_depth", 1)),
                 max_pages=int(payload.get("max_pages", 30)),
                 link_limit=int(payload.get("link_limit", 20)),

@@ -16,6 +16,7 @@ from .ranking import result_to_dict as ranked_to_dict
 from .search import result_to_dict as web_to_dict
 from .memory import OsintMemory
 from .learning import build_features, train_model
+from .bridge import serve_phantom_control_bridge
 from .legion import PhantomLegion
 from .worker import run_phantom_worker_agent, serve_phantom_worker, create_phantom_coordinator_server
 import json
@@ -99,11 +100,13 @@ def app_launcher(
     token: str = typer.Option("phantom", help="Authentication token required by workers and clients."),
     db_path: Path | None = typer.Option(Path(".phantom_coordinator.sqlite3"), help="SQLite database path for the coordinator."),
     worker_count: int = typer.Option(1, help="Number of local workers to start."),
+    bridge_host: str = typer.Option("0.0.0.0", help="Host interface for the control bridge."),
+    bridge_port: int = typer.Option(8790, help="TCP port for the control bridge."),
 ) -> None:
     """Launch the coordinator, workers, and GUI together."""
 
     console.print(f"Starting PHANTOM_LEGION app on {host}:{port} with {max(1, worker_count)} worker(s)")
-    launch_phantom_app(host=host, port=port, token=token, db_path=db_path, worker_count=worker_count, open_gui=True)
+    launch_phantom_app(host=host, port=port, token=token, db_path=db_path, worker_count=worker_count, bridge_host=bridge_host, bridge_port=bridge_port, open_gui=True)
 
 
 @app.command()
@@ -335,6 +338,21 @@ def phantom_coordinator(
         server.serve_forever()
     finally:
         server.server_close()
+
+
+@app.command("bridge")
+def bridge(
+    host: str = typer.Option("127.0.0.1", help="Host interface to bind the control bridge."),
+    port: int = typer.Option(8790, help="TCP port to listen on for remote commands."),
+    token: str = typer.Option("phantom", help="Authentication token required by the bridge."),
+    memory_db: Path = typer.Option(Path(".osint_memory.sqlite3"), help="SQLite database used to remember past work."),
+    reports_dir: Path = typer.Option(REPORTS_DIR, help="Directory where bridge-triggered reports are written."),
+    max_workers: int = typer.Option(2, help="Background job workers for bridge commands."),
+) -> None:
+    """Run an authenticated HTTP bridge for ESP32 or Arduino control."""
+
+    console.print(f"Starting PHANTOM_LEGION control bridge on {host}:{port}")
+    serve_phantom_control_bridge(host=host, port=port, token=token, memory_db=str(memory_db), reports_dir=reports_dir, max_workers=max_workers)
 
 
 if __name__ == "__main__":

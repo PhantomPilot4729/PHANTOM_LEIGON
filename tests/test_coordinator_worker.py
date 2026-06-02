@@ -22,6 +22,8 @@ def _get_json(url: str, token: str):
 
 
 def test_coordinator_worker_queue(monkeypatch, tmp_path: Path):
+    captured_kwargs = []
+
     class FakeResult:
         def __init__(self, subject: str):
             self.report = f"Report for {subject}"
@@ -30,7 +32,11 @@ def test_coordinator_worker_queue(monkeypatch, tmp_path: Path):
             self.ranked_sources = []
             self.crawl_result = type("CrawlResult", (), {"visited_urls": [], "discovered_links": [], "pdf_documents": [], "memory_hits": 0, "skipped_domains": []})()
 
-    monkeypatch.setattr("osint_agent.worker.run_investigation", lambda subject, **kwargs: FakeResult(subject))
+    def fake_run_investigation(subject, **kwargs):
+        captured_kwargs.append(kwargs)
+        return FakeResult(subject)
+
+    monkeypatch.setattr("osint_agent.worker.run_investigation", fake_run_investigation)
 
     token = "test-token"
     server = create_phantom_coordinator_server(port=0, token=token)
@@ -51,6 +57,8 @@ def test_coordinator_worker_queue(monkeypatch, tmp_path: Path):
         status = _get_json(f"{base}/job/{job_id}", token)
         assert status["status"] == "done"
         assert status["result"]["report"] == "Report for delta"
+        assert captured_kwargs
+        assert captured_kwargs[0]["track_trails"] is True
     finally:
         server.shutdown()
         thread.join(timeout=5)
