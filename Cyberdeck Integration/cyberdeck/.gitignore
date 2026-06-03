@@ -1,0 +1,7 @@
+data/bno055_cal.json
+*.db
+*.sqlite3
+__pycache__/
+*.pyc
+.venv/
+venv/

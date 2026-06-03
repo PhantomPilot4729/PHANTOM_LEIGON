@@ -1,0 +1,4 @@
+kismet --no-ncurses-wrapper
+
+sudo systemctl enable kismet
+sudo systemctl start kismet
