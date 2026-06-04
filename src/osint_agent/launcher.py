@@ -3,23 +3,26 @@ import time
 import threading
 from pathlib import Path
 from urllib import request as urllib_request
+
 from .gui import main as gui_main
 from osint_agent.worker import create_phantom_coordinator_server
 from osint_agent.bridge import create_phantom_control_bridge_server
 from osint_agent.worker import run_phantom_worker_agent
 from osint_agent.supervisor import Supervisor
 
+
 def _wait_for_health(url: str, timeout_seconds: float = 10.0) -> None:
     deadline = time.time() + timeout_seconds
     health_url = url.rstrip("/") + "/health"
     while time.time() < deadline:
         try:
-            with urllib_request.urlopen(health_url, timeout = 2) as response:
+            with urllib_request.urlopen(health_url, timeout=2) as response:
                 if response.status == 200:
                     return
         except Exception:
             time.sleep(0.1)
     raise RuntimeError(...)
+
 
 def launch_phantom_app(
         *,
@@ -34,10 +37,8 @@ def launch_phantom_app(
         bridge_port: int = 8790,
         open_gui: bool = True,
 ) -> None:
-    
-    #--------------------
+
     # Coordinator Setup
-    #--------------------
     coordinator_db = str(db_path) if db_path else None
 
     server = create_phantom_coordinator_server(
@@ -47,7 +48,7 @@ def launch_phantom_app(
         db_path=coordinator_db,
     )
 
-    supervisor = Supervisor(max_restarts=3, restart_backoff = 1.0)
+    supervisor = Supervisor(max_restarts=3, restart_backoff=1.0)
 
     def stop_coordinator():
         server.shutdown()
@@ -61,9 +62,7 @@ def launch_phantom_app(
 
     coordinator_url = f"http://{host}:{port}"
 
-    #--------------------
     # Bridge Setup
-    #--------------------
     bridge_server = create_phantom_control_bridge_server(
         host=bridge_host,
         port=bridge_port,
@@ -83,13 +82,11 @@ def launch_phantom_app(
 
     bridge_url = f"http://{bridge_host}:{bridge_port}"
 
-    #--------------------
     # Workers
-    #--------------------
     for index in range(max(1, worker_count)):
         supervisor.register(
             f"worker--{index}",
-            target = lambda c=coordinator_url, t=token:
+            target=lambda c=coordinator_url, t=token:
             run_phantom_worker_agent(
                 c,
                 t,
@@ -108,10 +105,8 @@ def launch_phantom_app(
     os.environ["OSINT_AGENT_BRIDGE_URL"] = bridge_url
     os.environ["OSINT_AGENT_BRIDGE_TOKEN"] = token
 
-    #--------------------
     # GUI / runtime
-    #--------------------
-    try: 
+    try:
         if open_gui:
             gui_main()
         else:
