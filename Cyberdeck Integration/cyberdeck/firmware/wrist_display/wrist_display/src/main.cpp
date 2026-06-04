@@ -118,7 +118,7 @@ void loop() {
         String line = client.readStringUntil('\n');
         line.trim();
 
-        StaticJsonDocument<512> doc;
+        JsonDocument doc;
         DeserializationError err = deserializeJson(doc, line);
 
         if (!err) {
