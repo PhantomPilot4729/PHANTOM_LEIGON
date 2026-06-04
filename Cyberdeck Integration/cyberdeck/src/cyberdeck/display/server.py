@@ -5,7 +5,7 @@ class DisplayServer:
         self.host = host
         self.port = port
         self.clients = []
-        self.lock = thread.Lock()
+        self.lock = threading.Lock()
         self._start_listener()
 
     def _start_listener(self):

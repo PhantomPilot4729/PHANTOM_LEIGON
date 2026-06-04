@@ -1,0 +1,105 @@
+import json
+import math
+import threading
+import time
+from pathlib import Path
+from typing import Optional, Tuple
+
+import board
+import adafruit_bno055
+
+class IMUDaemon:
+    """
+    Thread-safe BNO055 wrapper. Reads heading and pitch continuously
+    in a background thread. Handles startup calibration loading and
+    automatic sensor reconnection on I2C errors.
+    """
+
+    CAL_FILE = Path("bno055_cal.json")
+    DECLINATION = 11.0
+
+    def __init__(self, poll_hz: float = 20.0):
+        self._lock = threading.Lock()
+        self._heading: Optional[float] = None
+        self._pitch: Optional[float] = None
+        self._calibrated = False
+        self._poll_interval = 1.0 / poll_hz
+        self._stop_event = threading.Event()
+
+        self._sensor = self._init_sensor()
+
+        t = threading.Thread(target=self._run, daemon=True)
+        t.start()
+
+    def _init_sensor(self) -> adafruit_bno055.BNO055_I2C:
+        i2c = board.I2C()
+        sensor = adafruit_bno055.BNO055_I2C
+        sensor.mode = adafruit_bno055.NDOF_MODE
+
+        if self.CAL_FILE.exists():
+            self._load_cal(sensor)
+        else:
+            print("[IMU] No calibration file — heading may drift until calibrated.")
+
+        return sensor
+    
+    def _load_cal(self, sensor) -> None:
+        with open(self.CAL_FILE) as f:
+            data = json.load(f)
+        sensor.offsets_accelerometer = tuple(data["offsets_accel"])
+        sensor.offsets_magnetometer = tuple(data["offsets_mag"])
+        sensor.offsets_gyroscope = tuple(data["offsets_gyro"])
+        sensor.radius_accelerometer = data["radius_accel"]
+        sensor.radius_magnetometer = data["radius_mag"]
+        print("[IMU] Calibration loaded.")
+
+    def save_calibration(self) -> None:
+        """Call after running full calibration gestures."""
+        s = self._sensor
+        data = {
+            "offsets_accel": list(s.offsets_accelerometer),
+            "offsets_mag": list(s.offsets_magnetometer),
+            "offsets_gyro": list(s.offsets_gyroscope),
+            "radius_accel": s.radius_accelerometer,
+            "radius_mag": s.radius_magnetometer
+        }
+        with open(self.CAL_FILE, "w") as f:
+            json.dump(data, f, indent=2)
+        print(f"[IMU] Calibration saved to {self.CAL_FILE}")
+
+    def _run(self) -> None:
+        while not self._stop_event.is_set():
+            try:
+                euler = self._sensor.euler
+                cal = self._sensor.calibration_status
+
+                if euler[0] is not None:
+                    heading = (euler[0] - self.DECLINATION) % 360
+                    pitch = euler[2]
+                    
+                    with self._lock:
+                        self._heading = round(heading,1)
+                        self._pitch = round(pitch,1) if pitch else 0.0
+                        self._calibrated = all(v >=2 for v in cal)
+
+            except Exception as e:
+                print(f"[IMU] Read error: {e} - retrying in 2s")
+                time.sleep(2.0)
+                try:
+                    self._sensor = self._init_sensor()
+                except Exception:
+                    pass
+
+            time.sleep(self._poll_interval)
+
+    def get_pose(self) -> Tuple[Optional[float], Optional[float]]:
+        """Returns (heading_degrees, pitch_degrees). Bot None if no valid fix."""
+        with self._lock:
+            return self._heading, self._pitch
+        
+    def is_calibrated(self) -> bool:
+        with self._lock:
+            return self._calibrated
+        
+    def stop(self) -> None:
+        self._stop_event.set()
